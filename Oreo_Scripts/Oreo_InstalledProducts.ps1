@@ -26,11 +26,11 @@ $outpath = ".\InstalledSoftwares.csv"
 
 $csvcontents = @()  
 
-$servers = gc .\servers.txt
+$servers = get-content .\servers.txt
 
 foreach($ser in $servers)
 {
-    write "Working on $ser `n"
+    write-output "Working on $ser `n"
     $InstalledSoft = Get-InstalledProducts $ser
     $csvcontents += $InstalledSoft
 }

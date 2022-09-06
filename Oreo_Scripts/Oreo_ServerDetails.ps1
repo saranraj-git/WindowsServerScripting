@@ -1,5 +1,4 @@
 ﻿
-
 function hostname_to_ip($ser){
     $ipadd = [system.net.dns]::resolve($ser) | select -ExpandProperty Addresslist | select -ExpandProperty IPAddressToString
     return "$ipadd"
@@ -8,7 +7,11 @@ function hostname_to_ip($ser){
 
 function get-sysinfo($ser){
     #RAM:
-    $ComputerMemory =  Get-WmiObject -class WIN32_OperatingSystem -computername "$ser" | select TotalVisibleMemorySize,FreePhysicalMemory    $ComputerMemoryInGB = ([Math]::Round(($ComputerMemory.TotalVisibleMemorySize/1024/1024)))    $ComputerFreeMemoryInGB = ([Math]::Round(($ComputerMemory.FreePhysicalMemory/1024/1024)))    $MemoryPercent = ((($ComputerMemory.TotalVisibleMemorySize - $ComputerMemory.FreePhysicalMemory)*100)/ $ComputerMemory.TotalVisibleMemorySize)    $MemoryPercent = ([Math]::Round($MemoryPercent, 2))
+    $ComputerMemory =  Get-WmiObject -class WIN32_OperatingSystem -computername "$ser" | select TotalVisibleMemorySize,FreePhysicalMemory
+    $ComputerMemoryInGB = ([Math]::Round(($ComputerMemory.TotalVisibleMemorySize/1024/1024)))
+    $ComputerFreeMemoryInGB = ([Math]::Round(($ComputerMemory.FreePhysicalMemory/1024/1024)))
+    $MemoryPercent = ((($ComputerMemory.TotalVisibleMemorySize - $ComputerMemory.FreePhysicalMemory)*100)/ $ComputerMemory.TotalVisibleMemorySize)
+    $MemoryPercent = ([Math]::Round($MemoryPercent, 2))
 
     #CPU:
     $cor=$null;
@@ -17,14 +20,19 @@ function get-sysinfo($ser){
 
 
     #CPU Usage
-    $cpuusage = gwmi Win32_Processor -computername $ser | Measure-Object  -Property LoadPercentage -Average | Select-Object -ExpandProperty Average
+    $cpuusage = Get-WmiObject Win32_Processor -computername $ser | Measure-Object  -Property LoadPercentage -Average | Select-Object -ExpandProperty Average
 
     return $ComputerMemoryInGB,$MemoryPercent,$cor,$cpuusage
 }
 
 function get-uptime($ser){
-    #Server UP time    $TimeNow =  get-date -F 'MM/dd/yyyy HH:mm:ss'    #$bootuptime = (Get-CimInstance -ClassName Win32_OperatingSystem -ComputerName $ser).LastBootUpTime    $bootuptime = Get-WmiObject win32_operatingsystem -ComputerName $ser | select @{LABEL='LastBootUpTime';EXPRESSION={$_.ConverttoDateTime($_.lastbootuptime)}} | select LastBootUpTime    $TimeDiff = New-TimeSpan -Start $bootuptime -End $TimeNow    #$uptime = $TimeNow - $bootuptime 
-    write $TimeDiff
+    #Server UP time
+    $TimeNow =  get-date -F 'MM/dd/yyyy HH:mm:ss'
+    #$bootuptime = (Get-CimInstance -ClassName Win32_OperatingSystem -ComputerName $ser).LastBootUpTime
+    $bootuptime = Get-WmiObject win32_operatingsystem -ComputerName $ser | select @{LABEL='LastBootUpTime';EXPRESSION={$_.ConverttoDateTime($_.lastbootuptime)}} | select LastBootUpTime
+    $TimeDiff = New-TimeSpan -Start $bootuptime -End $TimeNow
+    #$uptime = $TimeNow - $bootuptime 
+    write-output $TimeDiff
 }
 
 
@@ -33,11 +41,11 @@ $outpath = ".\output.csv"
 
 $csvcontents = @()  
 
-$servers = gc .\servers.txt
+$servers = get-content -Path ".\servers.txt"
 
 foreach($ser in $servers)
 {
-    write "Working on $ser `n"
+    write-output-output "Working on $ser `n"
     $ipadd1 = hostname_to_ip $ser
     $totalmem, $memper, $totalcore, $cpuusage = get-sysinfo $ser
 
